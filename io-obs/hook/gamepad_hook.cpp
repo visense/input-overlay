@@ -8,11 +8,12 @@
 #include <util/platform.h>
 #include "gamepad_hook.hpp"
 #include "hook_helper.hpp"
+#include "../util/layout_constants.hpp"
 #include "../util/element/element_data_holder.hpp"
-#include "../util/element/element_button.hpp"
-#include "../util/element/element_analog_stick.hpp"
 #include "../util/element/element_trigger.hpp"
+#include "../util/element/element_analog_stick.hpp"
 #include "../util/element/element_dpad.hpp"
+#include "../util/element/element_button.hpp"
 
 namespace gamepad
 {
@@ -38,14 +39,20 @@ namespace gamepad
          */
         gamepad_hook_state = gamepad_hook_run_flag = init_pad_devices();    
 #endif
-
+		
 #ifdef WINDOWS
-        hook_thread = CreateThread(nullptr, 0, static_cast<LPTHREAD_START_ROUTINE>(hook_method),
-            nullptr, 0, nullptr);
+		xinput_fix::load();
+        if (xinput_fix::loaded)
+        {
+			hook_thread = CreateThread(nullptr, 0, static_cast<LPTHREAD_START_ROUTINE>(hook_method),
+				nullptr, 0, nullptr);
+        }
+   
         gamepad_hook_state = hook_thread;
 #else
         gamepad_hook_state = pthread_create(&game_pad_hook_thread, nullptr, hook_method, nullptr) == 0;
 #endif
+		init_pad_devices();
     }
 
     bool init_pad_devices()
@@ -61,34 +68,13 @@ namespace gamepad
         return flag;
     }
 
-#ifdef WINDOWS
-    uint16_t xinput_to_vc(const uint16_t code)
-    {
-        switch (code)
-        {
-        case XINPUT_GAMEPAD_A: return PAD_TO_VC(PAD_A);
-        case XINPUT_GAMEPAD_B: return PAD_TO_VC(PAD_B);
-        case XINPUT_GAMEPAD_X: return PAD_TO_VC(PAD_X);
-        case XINPUT_GAMEPAD_Y: return PAD_TO_VC(PAD_Y);
-        case XINPUT_GAMEPAD_DPAD_DOWN: return PAD_TO_VC(PAD_DPAD_DOWN);
-        case XINPUT_GAMEPAD_DPAD_UP: return PAD_TO_VC(PAD_DPAD_UP);
-        case XINPUT_GAMEPAD_DPAD_LEFT: return PAD_TO_VC(PAD_DPAD_LEFT);
-        case XINPUT_GAMEPAD_DPAD_RIGHT: return PAD_TO_VC(PAD_DPAD_RIGHT);
-        case XINPUT_GAMEPAD_LEFT_SHOULDER: return PAD_TO_VC(PAD_LB);
-        case XINPUT_GAMEPAD_RIGHT_SHOULDER: return PAD_TO_VC(PAD_RB);
-        case XINPUT_GAMEPAD_START: return PAD_TO_VC(PAD_START);
-        case XINPUT_GAMEPAD_BACK: return PAD_TO_VC(PAD_BACK);
-        default: return 0xFFFF;
-        }
-    }
-#endif
-
     void end_pad_hook()
     {
         gamepad_hook_run_flag = false;
 
 #ifdef WINDOWS
         CloseHandle(hook_thread);
+		xinput_fix::unload();
 #endif
     }
 
@@ -110,80 +96,36 @@ namespace gamepad
                     continue;
 
 #ifdef WINDOWS
-                dpad_direction dir[] = {DPAD_CENTER, DPAD_CENTER};
+				dpad_direction d;
 
-                for (const auto& button : pad_keys)
+                for (const auto& button : all_codes)
                 {
-                    const auto state = X_PRESSED(button)
-                        ? STATE_PRESSED
-                        : STATE_RELEASED;
-                    hook::input_data->add_gamepad_data(
-                        pad.get_id(), xinput_to_vc(button),
+                    const auto state = xinput_fix::pressed(pad.ptr(), button);
+                    hook::input_data->add_gamepad_data(pad.get_id(), xinput_to_vc(button),
                         new element_data_button(state));
-
-                    if (state == STATE_PRESSED)
-                    {
-                        switch (button)
-                        {
-                        case XINPUT_GAMEPAD_DPAD_UP:
-                            if (!dir[0])
-                                dir[0] = DPAD_UP;
-                            else
-                                dir[1] = DPAD_UP;
-                            break;
-                        case XINPUT_GAMEPAD_DPAD_DOWN:
-                            if (!dir[0])
-                                dir[0] = DPAD_DOWN;
-                            else
-                                dir[1] = DPAD_DOWN;
-                            break;
-                        case XINPUT_GAMEPAD_DPAD_LEFT:
-                            if (!dir[0])
-                                dir[0] = DPAD_LEFT;
-                            else
-                                dir[1] = DPAD_LEFT;
-                            break;
-                        case XINPUT_GAMEPAD_DPAD_RIGHT:
-                            if (!dir[0])
-                                dir[0] = DPAD_RIGHT;
-                            else
-                                dir[1] = DPAD_RIGHT;
-                            break;
-                        default: ;
-                        }
-                    }
                 }
 
                 /* Dpad direction */
+				xinput_fix::get_dpad(pad.ptr(), dir);
                 hook::input_data->add_gamepad_data(pad.get_id(), VC_DPAD_DATA,
                     new element_data_dpad(dir[0], dir[1]));
 
                 /* Analog sticks */
                 hook::input_data->add_gamepad_data(pad.get_id(), VC_STICK_DATA,
                     new element_data_analog_stick(
-                        X_PRESSED(XINPUT_GAMEPAD_LEFT_THUMB)
-                        ? STATE_PRESSED
-                        : STATE_RELEASED,
-                        X_PRESSED(XINPUT_GAMEPAD_RIGHT_THUMB)
-                        ? STATE_PRESSED
-                        : STATE_RELEASED,
-                        pad.get_xinput()->Gamepad.sThumbLX /
-                        STICK_MAX_VAL,
-                        -pad.get_xinput()->Gamepad.sThumbLY /
-                        STICK_MAX_VAL,
-                        pad.get_xinput()->Gamepad.sThumbRX /
-                        STICK_MAX_VAL,
-                        -pad.get_xinput()->Gamepad.sThumbRY /
-                        STICK_MAX_VAL
+                        xinput_fix::pressed(pad.ptr(), xinput_fix::CODE_LEFT_THUMB),
+						xinput_fix::pressed(pad.ptr(), xinput_fix::CODE_RIGHT_THUMB),
+						xinput_fix::stick_l_x(pad.ptr()),
+						xinput_fix::stick_l_y(pad.ptr()),
+						xinput_fix::stick_r_x(pad.ptr()),
+						xinput_fix::stick_r_y(pad.ptr())
                     ));
 
                 /* Trigger buttons */
                 hook::input_data->add_gamepad_data(pad.get_id(), VC_TRIGGER_DATA,
                     new element_data_trigger(
-                        pad.get_xinput()->Gamepad.bLeftTrigger /
-                        255.f,
-                        pad.get_xinput()->Gamepad.bRightTrigger /
-                        255.f
+						xinput_fix::trigger_l(pad.ptr()),
+						xinput_fix::trigger_r(pad.ptr())
                     ));
 #else
                 unsigned char m_packet[8];

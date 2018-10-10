@@ -5,7 +5,8 @@
  * github.com/univrsal/input-overlay
  */
 
-#pragma once
+#ifndef LAYOUT_CONSTANTS
+#define LAYOUT_CONSTANTS
 
 /* Prevent cropped textures from overlapping */
 #define CFG_INNER_BORDER    3
@@ -140,3 +141,5 @@ enum element_type
     TEXT,
     DPAD_STICK,
 };
+
+#endif

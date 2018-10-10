@@ -10,6 +10,7 @@
 #include <string>
 #include "graphics/vec2.h"
 #include "../util.hpp"
+#include "graphics/graphics.h"
 
 typedef struct gs_image_file gs_image_file_t;
 

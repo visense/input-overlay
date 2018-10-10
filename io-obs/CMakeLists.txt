@@ -54,6 +54,8 @@ set(input-overlay_SOURCES
     util/overlay.cpp
     util/overlay.hpp
     util/layout_constants.hpp
+    util/xinput.cpp
+    util/xinput.hpp
     util/element/element.cpp
     util/element/element.hpp
     util/element/element_texture.cpp

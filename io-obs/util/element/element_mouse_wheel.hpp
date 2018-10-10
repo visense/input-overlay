@@ -6,8 +6,6 @@
  */
 
 #pragma once
-#include "../layout_constants.hpp"
-#include "element.hpp"
 #include "element_texture.hpp"
 
 #define WHEEL_MAP_MIDDLE  0

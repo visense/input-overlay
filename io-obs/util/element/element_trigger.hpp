@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "../layout_constants.hpp"
 #include "element_texture.hpp"
 
 enum trigger_data_type
@@ -17,7 +16,6 @@ enum trigger_data_type
     T_DATA_LEFT,
     T_DATA_RIGHT
 };
-
 
 /* Contains data for both trigger buttons
  */

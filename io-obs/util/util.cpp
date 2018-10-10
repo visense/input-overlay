@@ -1,7 +1,10 @@
 #include "util.hpp"
 #include <uiohook.h>
 #include <algorithm>
-
+#include <obs-module.h>
+#ifdef DEBUG
+#include <random>
+#endif
 /**
  * This file is part of input-overlay
  * which is licensed under the MPL 2.0 license

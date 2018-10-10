@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "../layout_constants.hpp"
 #include "element_texture.hpp"
 
 /* Contains data for both trigger buttons

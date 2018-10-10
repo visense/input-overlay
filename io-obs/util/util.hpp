@@ -19,8 +19,6 @@
 #endif /* WINDOWS / LINUX */
 
 #ifdef LINUX
-#include <math.h>
-
 #ifndef VC_KP_UP /* keypad arrows are undefined on linux */
 #define VC_KP_UP 0xEE48
 #define VC_KP_DOWN 0xEE4B
@@ -28,13 +26,6 @@
 #define VC_KP_RIGHT 0xEE50
 #endif
 
-#endif
-
-#include <string>
-#include <obs-module.h>
-
-#ifdef DEBUG
-#include <random>
 #endif
 
 #endif /* CCT */
@@ -184,7 +175,6 @@
 #define VC_DPAD_DATA        0xEC32
 
 #define PAD_TO_VC(a)        (a | VC_PAD_MASK)
-#define PAD_COUNT 4
 
 #define PAD_ICON_COUNT      22
 #define PAD_BUTTON_COUNT    17
@@ -216,6 +206,7 @@
 /* Get default key names from a libuiohook keycode */
 const char* key_to_text(int key_code);
 
+#include <string>
 /* Creates string for obs to use as accepted files for a file dialog */
 std::string util_file_filter(const char* display, const char* formats);
 
